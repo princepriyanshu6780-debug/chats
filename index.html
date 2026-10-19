@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Chat</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Pehle username maangein -->
+    <div id="login-box">
+        <h2>Username daalein</h2>
+        <input type="text" id="username" placeholder="Apna naam likhein..." />
+        <button onclick="joinChat()">Chat Join Karein</button>
+    </div>
+
+    <!-- Chat area (shuru mein hidden rahega) -->
+    <div id="chat-container" style="display: none;">
+        <div id="messages"></div>
+        <div class="input-area">
+            <input type="text" id="message-input" placeholder="Message likhein..." />
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <!-- Socket.IO client library (server se automatically aati hai) -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let currentUser = "";
+
+        // Chat join karne ka function
+        function joinChat() {
+            const user = document.getElementById('username').value;
+            if (user.trim() === "") return alert("Username khali nahi ho sakta!");
+            
+            currentUser = user;
+            document.getElementById('login-box').style.display = 'none';
+            document.getElementById('chat-container').style.display = 'block';
+        }
+
+        // Message bhejne ka function
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            const text = input.value;
+            if (text.trim() === "") return;
+
+            // Server ko message bhejein (username ke saath)
+            socket.emit('chat message', {
+                user: currentUser,
+                text: text
+            });
+            input.value = '';
+        }
+
+        // Enter dabane par message send ho
+        document.getElementById('message-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        // Server se aaya hua message display karein
+        socket.on('chat message', (data) => {
+            const messagesDiv = document.getElementById('messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message';
+            msgDiv.innerHTML = `<strong>${data.user}:</strong> ${data.text}`;
+            messagesDiv.appendChild(msgDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto scroll
+        });
+    </script>
+</body>
+</html>
